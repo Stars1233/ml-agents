@@ -49,7 +49,7 @@ namespace Unity.MLAgents.Integrations.Match3
             set => m_ForceHeuristic = value;
         }
 
-        protected int CreateNewSeed()
+        int CreateNewSeed()
         {
 #if UNITY_6000_3_OR_NEWER
             return gameObject.GetEntityId().GetHashCode();

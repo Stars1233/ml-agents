@@ -22,7 +22,7 @@ public class HallwayAgent : Agent
 
     public override void Initialize()
     {
-        m_HallwaySettings = FindFirstObjectByType<HallwaySettings>();
+        m_HallwaySettings = FindAnyObjectByType<HallwaySettings>();
         m_AgentRb = GetComponent<Rigidbody>();
         m_GroundRenderer = ground.GetComponent<Renderer>();
         m_GroundMaterial = m_GroundRenderer.material;

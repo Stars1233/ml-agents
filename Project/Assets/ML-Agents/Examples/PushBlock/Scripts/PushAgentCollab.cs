@@ -12,7 +12,7 @@ public class PushAgentCollab : Agent
     protected override void Awake()
     {
         base.Awake();
-        m_PushBlockSettings = FindFirstObjectByType<PushBlockSettings>();
+        m_PushBlockSettings = FindAnyObjectByType<PushBlockSettings>();
     }
 
     public override void Initialize()

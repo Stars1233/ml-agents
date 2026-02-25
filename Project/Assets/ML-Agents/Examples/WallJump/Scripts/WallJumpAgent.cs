@@ -52,7 +52,7 @@ public class WallJumpAgent : Agent
 
     public override void Initialize()
     {
-        m_WallJumpSettings = FindFirstObjectByType<WallJumpSettings>();
+        m_WallJumpSettings = FindAnyObjectByType<WallJumpSettings>();
         m_Configuration = Random.Range(0, 5);
 
         m_AgentRb = GetComponent<Rigidbody>();

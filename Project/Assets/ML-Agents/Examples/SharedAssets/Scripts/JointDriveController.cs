@@ -109,6 +109,7 @@ namespace Unity.MLAgentsExamples
         public float jointDampen;
         public float maxJointForceLimit;
 
+        [System.NonSerialized]
         [HideInInspector] public Dictionary<Transform, BodyPart> bodyPartsDict = new Dictionary<Transform, BodyPart>();
 
         [HideInInspector] public List<BodyPart> bodyPartsList = new List<BodyPart>();

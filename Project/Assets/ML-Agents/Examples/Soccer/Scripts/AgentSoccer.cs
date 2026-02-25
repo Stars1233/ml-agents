@@ -88,7 +88,7 @@ public class AgentSoccer : Agent
             m_LateralSpeed = 0.3f;
             m_ForwardSpeed = 1.0f;
         }
-        m_SoccerSettings = FindFirstObjectByType<SoccerSettings>();
+        m_SoccerSettings = FindAnyObjectByType<SoccerSettings>();
         agentRb = GetComponent<Rigidbody>();
         agentRb.maxAngularVelocity = 500;
 

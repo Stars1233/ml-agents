@@ -47,7 +47,7 @@ public class PushBlockWithInputAgentBasic : Agent
     protected override void Awake()
     {
         base.Awake();
-        m_PushBlockSettings = FindFirstObjectByType<PushBlockWithInputSettings>();
+        m_PushBlockSettings = FindAnyObjectByType<PushBlockWithInputSettings>();
 
         goalDetect = block.GetComponent<GoalDetectWithInput>();
         goalDetect.agent = this;

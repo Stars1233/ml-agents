@@ -48,7 +48,11 @@ namespace Unity.MLAgents.Tests.Input
         public override void TearDown()
         {
             m_ActuatorComponent.CleanupActionAsset();
+#if UNITY_6000_3_OR_NEWER
+            var objects = UnityEngine.Object.FindObjectsByType<GameObject>(FindObjectsInactive.Include);
+#else
             var objects = UnityEngine.Object.FindObjectsByType<GameObject>(FindObjectsSortMode.InstanceID);
+#endif
             foreach (var o in objects)
             {
                 UnityEngine.Object.DestroyImmediate(o);
