@@ -10,7 +10,7 @@ namespace Unity.MLAgents.Tests
         [TearDown]
         public void RemoveGameObjects()
         {
-#if UNITY_6000_3_OR_NEWER
+#if UNITY_6000_4_OR_NEWER
             var objects = UnityEngine.Object.FindObjectsByType<GameObject>(FindObjectsInactive.Include);
 #else
             var objects = UnityEngine.Object.FindObjectsByType<GameObject>(FindObjectsSortMode.InstanceID);
