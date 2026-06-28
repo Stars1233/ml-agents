@@ -104,3 +104,6 @@ coverage.xml
 
 Tools/ci/obj/
 Tools/ci/bin/
+
+CLAUDE.md
+.claude/**

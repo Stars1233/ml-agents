@@ -2,13 +2,45 @@ using System.Collections.Generic;
 using Unity.InferenceEngine;
 using NUnit.Framework;
 using UnityEngine;
+using UnityEngine.TestTools;
 using Unity.MLAgents.Actuators;
 using Unity.MLAgents.Inference;
 using Unity.MLAgents.Policies;
+using Unity.MLAgents.Sensors;
 using Unity.MLAgents.Utils.Tests;
 
 namespace Unity.MLAgents.Tests
 {
+    internal class OverflowSensor : ISensor
+    {
+        readonly string m_Name;
+        readonly int m_Size;
+
+        public OverflowSensor(string name, int size)
+        {
+            m_Name = name;
+            m_Size = size;
+        }
+
+        public ObservationSpec GetObservationSpec()
+        {
+            return ObservationSpec.Vector(m_Size);
+        }
+
+        public int Write(ObservationWriter writer)
+        {
+            for (var i = 0; i < m_Size; i++)
+                writer[i] = i + 1f;
+            return m_Size;
+        }
+
+        public byte[] GetCompressedObservation() { return null; }
+        public CompressionSpec GetCompressionSpec() { return new CompressionSpec(SensorCompressionType.None); }
+        public string GetName() { return m_Name; }
+        public void Update() { }
+        public void Reset() { }
+    }
+
     [TestFixture]
     public class EditModeTestInternalBrainTensorGenerator
     {
@@ -175,6 +207,107 @@ namespace Unity.MLAgents.Tests
             Assert.AreEqual((int)((Tensor<float>)inputTensor.data)[0, 4], 1);
             Assert.AreEqual((int)((Tensor<float>)inputTensor.data)[1, 0], 0);
             Assert.AreEqual((int)((Tensor<float>)inputTensor.data)[1, 4], 1);
+        }
+
+        [Test]
+        public void GenerateVectorObservation_CapacityGuardPreventsOverflow()
+        {
+            // Tensor can hold 3 floats, sensor0 fills it exactly (3),
+            // so the guard fires before sensor1 can write anything.
+            var inputTensor = new TensorProxy
+            {
+                valueType = TensorProxy.TensorType.FloatingPoint,
+                shape = new int[] { 1, 3 }
+            };
+
+            var sensor0 = new OverflowSensor("sensor0", 3);
+            var sensor1 = new OverflowSensor("sensor1", 3);
+            var sensors = new List<ISensor> { sensor0, sensor1 };
+
+            var generator = new ObservationGenerator();
+            generator.AddSensorIndex(0);
+            generator.AddSensorIndex(1);
+
+            var inputs = new List<AgentInfoSensorsPair>
+            {
+                new AgentInfoSensorsPair
+                {
+                    agentInfo = new AgentInfo { done = false },
+                    sensors = sensors
+                }
+            };
+
+            LogAssert.Expect(LogType.Warning, new System.Text.RegularExpressions.Regex("Sensor write overflow"));
+            generator.Generate(inputTensor, 1, inputs);
+
+            // First sensor's 3 writes land, second sensor is skipped by capacity guard
+            Assert.AreEqual(1f, ((Tensor<float>)inputTensor.data)[0, 0]);
+            Assert.AreEqual(2f, ((Tensor<float>)inputTensor.data)[0, 1]);
+            Assert.AreEqual(3f, ((Tensor<float>)inputTensor.data)[0, 2]);
+        }
+
+        [Test]
+        public void GenerateVectorObservation_SingleSensorOverflowIsClamped()
+        {
+            // Tensor can hold 2 floats, but sensor writes 5
+            var inputTensor = new TensorProxy
+            {
+                valueType = TensorProxy.TensorType.FloatingPoint,
+                shape = new int[] { 1, 2 }
+            };
+
+            var sensor = new OverflowSensor("big_sensor", 5);
+            var sensors = new List<ISensor> { sensor };
+
+            var generator = new ObservationGenerator();
+            generator.AddSensorIndex(0);
+
+            var inputs = new List<AgentInfoSensorsPair>
+            {
+                new AgentInfoSensorsPair
+                {
+                    agentInfo = new AgentInfo { done = false },
+                    sensors = sensors
+                }
+            };
+
+            // No crash — ObservationWriter bounds cap prevents the buffer overrun
+            generator.Generate(inputTensor, 1, inputs);
+
+            Assert.AreEqual(1f, ((Tensor<float>)inputTensor.data)[0, 0]);
+            Assert.AreEqual(2f, ((Tensor<float>)inputTensor.data)[0, 1]);
+        }
+
+        [Test]
+        public void GenerateVectorObservation_ExactFitNoWarning()
+        {
+            // Tensor exactly fits the sensor output — no warning should fire
+            var inputTensor = new TensorProxy
+            {
+                valueType = TensorProxy.TensorType.FloatingPoint,
+                shape = new int[] { 1, 3 }
+            };
+
+            var sensor = new OverflowSensor("exact_sensor", 3);
+            var sensors = new List<ISensor> { sensor };
+
+            var generator = new ObservationGenerator();
+            generator.AddSensorIndex(0);
+
+            var inputs = new List<AgentInfoSensorsPair>
+            {
+                new AgentInfoSensorsPair
+                {
+                    agentInfo = new AgentInfo { done = false },
+                    sensors = sensors
+                }
+            };
+
+            generator.Generate(inputTensor, 1, inputs);
+
+            Assert.AreEqual(1f, ((Tensor<float>)inputTensor.data)[0, 0]);
+            Assert.AreEqual(2f, ((Tensor<float>)inputTensor.data)[0, 1]);
+            Assert.AreEqual(3f, ((Tensor<float>)inputTensor.data)[0, 2]);
         }
     }
 }
